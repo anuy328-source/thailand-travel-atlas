@@ -3,7 +3,7 @@ const fs = require("fs");
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const DATA_SOURCE_ID = process.env.NOTION_DATABASE_ID || "";
 
-if (!NOTION_TOKEN || !DATABASE_ID) {
+if (!NOTION_TOKEN || !DATA_SOURCE_ID) {
   throw new Error("NOTION_TOKEN or NOTION_DATABASE_ID is missing.");
 }
 
