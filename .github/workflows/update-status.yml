@@ -12,9 +12,18 @@ jobs:
   update:
     runs-on: ubuntu-latest
 
+    env:
+      NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Check secrets
+        run: |
+          node -e "console.log('NOTION_TOKEN exists:', !!process.env.NOTION_TOKEN)"
+          node -e "console.log('NOTION_DATABASE_ID exists:', !!process.env.NOTION_DATABASE_ID)"
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -23,9 +32,6 @@ jobs:
 
       - name: Update status from Notion
         run: node scripts/update-status.js
-        env:
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
 
       - name: Commit status.json
         run: |
