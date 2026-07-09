@@ -5,11 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Thailand Travel Atlas</title>
 
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-
   <style>
     body {
       margin: 0;
@@ -19,7 +14,7 @@
     }
 
     .wrap {
-      padding: 16px;
+      padding: 14px;
     }
 
     h1 {
@@ -33,6 +28,7 @@
       font-size: 13px;
       margin-bottom: 10px;
       flex-wrap: wrap;
+      align-items: center;
     }
 
     .dot {
@@ -46,19 +42,15 @@
 
     .visited { background: #4CAF50; }
     .planned { background: #F4C542; }
-    .unvisited { background: #E8E8E8; border: 1px solid #bbb; }
+    .unvisited { background: #E8E8E8; border: 1px solid #aaa; }
 
-    #map {
+    #chartdiv {
       width: 100%;
       height: 680px;
       border-radius: 16px;
-      overflow: hidden;
       border: 1px solid #ddd;
-      background: #fff;
-    }
-
-    .leaflet-container {
       background: #ffffff;
+      overflow: hidden;
     }
 
     .info {
@@ -79,141 +71,99 @@
       <span><span class="dot unvisited"></span>未訪問</span>
     </div>
 
-    <div id="map"></div>
+    <div id="chartdiv"></div>
 
     <div class="info">
-      Notion連携前のテスト版。まずは地図表示と色分けを確認。
+      テスト版：まず地図表示と色分けを確認
     </div>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+  <script src="https://cdn.amcharts.com/lib/5/map.js"></script>
+  <script src="https://cdn.amcharts.com/lib/5/geodata/thailandLow.js"></script>
+  <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
 
   <script>
-    // ===== ここを後でNotion連携に置き換える =====
+    am5.ready(function() {
+      const root = am5.Root.new("chartdiv");
 
-    // 訪問済み県：英語名で入れる
-    const visited = [
-      "Bangkok",
-      "Chiang Mai",
-      "Chiang Rai",
-      "Chon Buri",
-      "Rayong",
-      "Chanthaburi",
-      "Trat",
-      "Kanchanaburi",
-      "Nakhon Ratchasima",
-      "Khon Kaen",
-      "Udon Thani",
-      "Nong Khai",
-      "Nakhon Phanom",
-      "Ubon Ratchathani",
-      "Songkhla"
-    ];
+      root.setThemes([
+        am5themes_Animated.new(root)
+      ]);
 
-    // 計画中県：英語名で入れる
-    const planned = [
-      "Phatthalung",
-      "Trang",
-      "Yala",
-      "Pattani",
-      "Narathiwat"
-    ];
-
-    // 表記ゆれ対策
-    const aliases = {
-      "Bangkok Metropolis": "Bangkok",
-      "Krung Thep Maha Nakhon": "Bangkok",
-      "Chonburi": "Chon Buri",
-      "Phra Nakhon Si Ayutthaya": "Ayutthaya",
-      "Nakhon Si Thammarat": "Nakhon Si Thammarat",
-      "Prachuap Khiri Khan": "Prachuap Khiri Khan",
-      "Ubon Ratchatani": "Ubon Ratchathani"
-    };
-
-    function normalizeName(name) {
-      if (!name) return "";
-      const clean = String(name).trim();
-      return aliases[clean] || clean;
-    }
-
-    function getProvinceName(feature) {
-      const p = feature.properties || {};
-
-      return normalizeName(
-        p.NAME_1 ||
-        p.name ||
-        p.NAME ||
-        p.province ||
-        p.Province ||
-        p.ADM1_EN ||
-        p.ADM1_NAME ||
-        p.NAME_EN ||
-        p.PROV_NAM_E ||
-        p.PROV_NAMT ||
-        p.province_en ||
-        ""
+      const chart = root.container.children.push(
+        am5map.MapChart.new(root, {
+          panX: "none",
+          panY: "none",
+          wheelY: "none",
+          projection: am5map.geoMercator()
+        })
       );
-    }
 
-    function getFillColor(name) {
-      if (visited.includes(name)) return "#4CAF50";
-      if (planned.includes(name)) return "#F4C542";
-      return "#E8E8E8";
-    }
+      // 訪問済み県
+      const visited = [
+        "TH-10", // Bangkok
+        "TH-20", // Chon Buri
+        "TH-21", // Rayong
+        "TH-22", // Chanthaburi
+        "TH-23", // Trat
+        "TH-30", // Nakhon Ratchasima
+        "TH-34", // Ubon Ratchathani
+        "TH-40", // Khon Kaen
+        "TH-41", // Udon Thani
+        "TH-43", // Nong Khai
+        "TH-48", // Nakhon Phanom
+        "TH-50", // Chiang Mai
+        "TH-57", // Chiang Rai
+        "TH-71", // Kanchanaburi
+        "TH-90"  // Songkhla
+      ];
 
-    const map = L.map("map", {
-      zoomControl: true,
-      scrollWheelZoom: false
-    });
+      // 計画中県
+      const planned = [
+        "TH-92", // Trang
+        "TH-93", // Phatthalung
+        "TH-94", // Pattani
+        "TH-95", // Yala
+        "TH-96"  // Narathiwat
+      ];
 
-    const geojsonUrl =
-      "https://cdn.jsdelivr.net/gh/cvibhagool/thailand-map@master/thailand-provinces.geojson";
+      const polygonSeries = chart.series.push(
+        am5map.MapPolygonSeries.new(root, {
+          geoJSON: am5geodata_thailandLow
+        })
+      );
 
-    fetch(geojsonUrl)
-      .then(res => res.json())
-      .then(data => {
-        const layer = L.geoJSON(data, {
-          style: feature => {
-            const name = getProvinceName(feature);
-            return {
-              color: "#ffffff",
-              weight: 1,
-              fillColor: getFillColor(name),
-              fillOpacity: 0.9
-            };
-          },
-          onEachFeature: (feature, layer) => {
-            const name = getProvinceName(feature);
-
-            layer.bindTooltip(name || "Unknown", {
-              sticky: true
-            });
-
-            layer.on("mouseover", function () {
-              this.setStyle({
-                weight: 2,
-                color: "#333"
-              });
-            });
-
-            layer.on("mouseout", function () {
-              this.setStyle({
-                weight: 1,
-                color: "#ffffff"
-              });
-            });
-          }
-        }).addTo(map);
-
-        map.fitBounds(layer.getBounds(), {
-          padding: [10, 10]
-        });
-      })
-      .catch(err => {
-        console.error(err);
-        document.getElementById("map").innerHTML =
-          "<p style='padding:20px;'>地図データの読み込みに失敗しました。</p>";
+      polygonSeries.mapPolygons.template.setAll({
+        tooltipText: "{name}",
+        interactive: true,
+        stroke: am5.color(0xffffff),
+        strokeWidth: 1,
+        fill: am5.color(0xe8e8e8)
       });
+
+      polygonSeries.mapPolygons.template.adapters.add("fill", function(fill, target) {
+        const id = target.dataItem.dataContext.id;
+
+        if (visited.includes(id)) {
+          return am5.color(0x4CAF50);
+        }
+
+        if (planned.includes(id)) {
+          return am5.color(0xF4C542);
+        }
+
+        return am5.color(0xE8E8E8);
+      });
+
+      polygonSeries.mapPolygons.template.states.create("hover", {
+        fill: am5.color(0x7BC67E)
+      });
+
+      polygonSeries.events.on("datavalidated", function() {
+        chart.goHome();
+      });
+    });
   </script>
 </body>
 </html>
