@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thailand Travel Atlas</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f7f7f3;
+      color: #222;
+    }
+
+    .wrap {
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin: 0 0 8px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      font-size: 13px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 5px;
+      vertical-align: -1px;
+    }
+
+    .visited { background: #4CAF50; }
+    .planned { background: #F4C542; }
+    .unvisited { background: #E8E8E8; border: 1px solid #bbb; }
+
+    #map {
+      width: 100%;
+      height: 680px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid #ddd;
+      background: #fff;
+    }
+
+    .leaflet-container {
+      background: #ffffff;
+    }
+
+    .info {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #555;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>🇹🇭 Thailand Travel Atlas</h1>
+
+    <div class="legend">
+      <span><span class="dot visited"></span>訪問済み</span>
+      <span><span class="dot planned"></span>計画中</span>
+      <span><span class="dot unvisited"></span>未訪問</span>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="info">
+      Notion連携前のテスト版。まずは地図表示と色分けを確認。
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // ===== ここを後でNotion連携に置き換える =====
+
+    // 訪問済み県：英語名で入れる
+    const visited = [
+      "Bangkok",
+      "Chiang Mai",
+      "Chiang Rai",
+      "Chon Buri",
+      "Rayong",
+      "Chanthaburi",
+      "Trat",
+      "Kanchanaburi",
+      "Nakhon Ratchasima",
+      "Khon Kaen",
+      "Udon Thani",
+      "Nong Khai",
+      "Nakhon Phanom",
+      "Ubon Ratchathani",
+      "Songkhla"
+    ];
+
+    // 計画中県：英語名で入れる
+    const planned = [
+      "Phatthalung",
+      "Trang",
+      "Yala",
+      "Pattani",
+      "Narathiwat"
+    ];
+
+    // 表記ゆれ対策
+    const aliases = {
+      "Bangkok Metropolis": "Bangkok",
+      "Krung Thep Maha Nakhon": "Bangkok",
+      "Chonburi": "Chon Buri",
+      "Phra Nakhon Si Ayutthaya": "Ayutthaya",
+      "Nakhon Si Thammarat": "Nakhon Si Thammarat",
+      "Prachuap Khiri Khan": "Prachuap Khiri Khan",
+      "Ubon Ratchatani": "Ubon Ratchathani"
+    };
+
+    function normalizeName(name) {
+      if (!name) return "";
+      const clean = String(name).trim();
+      return aliases[clean] || clean;
+    }
+
+    function getProvinceName(feature) {
+      const p = feature.properties || {};
+
+      return normalizeName(
+        p.NAME_1 ||
+        p.name ||
+        p.NAME ||
+        p.province ||
+        p.Province ||
+        p.ADM1_EN ||
+        p.ADM1_NAME ||
+        p.NAME_EN ||
+        p.PROV_NAM_E ||
+        p.PROV_NAMT ||
+        p.province_en ||
+        ""
+      );
+    }
+
+    function getFillColor(name) {
+      if (visited.includes(name)) return "#4CAF50";
+      if (planned.includes(name)) return "#F4C542";
+      return "#E8E8E8";
+    }
+
+    const map = L.map("map", {
+      zoomControl: true,
+      scrollWheelZoom: false
+    });
+
+    const geojsonUrl =
+      "https://cdn.jsdelivr.net/gh/cvibhagool/thailand-map@master/thailand-provinces.geojson";
+
+    fetch(geojsonUrl)
+      .then(res => res.json())
+      .then(data => {
+        const layer = L.geoJSON(data, {
+          style: feature => {
+            const name = getProvinceName(feature);
+            return {
+              color: "#ffffff",
+              weight: 1,
+              fillColor: getFillColor(name),
+              fillOpacity: 0.9
+            };
+          },
+          onEachFeature: (feature, layer) => {
+            const name = getProvinceName(feature);
+
+            layer.bindTooltip(name || "Unknown", {
+              sticky: true
+            });
+
+            layer.on("mouseover", function () {
+              this.setStyle({
+                weight: 2,
+                color: "#333"
+              });
+            });
+
+            layer.on("mouseout", function () {
+              this.setStyle({
+                weight: 1,
+                color: "#ffffff"
+              });
+            });
+          }
+        }).addTo(map);
+
+        map.fitBounds(layer.getBounds(), {
+          padding: [10, 10]
+        });
+      })
+      .catch(err => {
+        console.error(err);
+        document.getElementById("map").innerHTML =
+          "<p style='padding:20px;'>地図データの読み込みに失敗しました。</p>";
+      });
+  </script>
+</body>
+</html>
