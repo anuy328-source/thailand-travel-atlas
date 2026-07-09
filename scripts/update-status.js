@@ -1,7 +1,7 @@
 const fs = require("fs");
 
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
-const DATABASE_ID = (process.env.NOTION_DATABASE_ID || "").replace(/-/g, "");
+const DATA_SOURCE_ID = process.env.NOTION_DATABASE_ID || "";
 
 if (!NOTION_TOKEN || !DATABASE_ID) {
   throw new Error("NOTION_TOKEN or NOTION_DATABASE_ID is missing.");
@@ -202,11 +202,11 @@ async function queryNotion(cursor = null) {
 
   if (cursor) body.start_cursor = cursor;
 
-  const res = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}/query`, {
+  const res = await fetch(`https://api.notion.com/v1/data_sources/${DATA_SOURCE_ID}/query`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${NOTION_TOKEN}`,
-      "Notion-Version": "2022-06-28",
+      "Notion-Version": "2025-09-03",
       "Content-Type": "application/json"
     },
     body: JSON.stringify(body)
