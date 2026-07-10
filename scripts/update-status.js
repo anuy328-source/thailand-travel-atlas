@@ -94,7 +94,7 @@ add("TH-75", "サムットソンクラーム", "Samut Songkhram");
 add("TH-76", "ペッチャブリー", "Phetchaburi");
 add("TH-77", "プラチュワップキーリーカン", "Prachuap Khiri Khan");
 
-add("TH-80", "ナコンシータマラート", "Nakhon Si Thammarat");
+add("TH-80", "ナコーンシータマラート", "Nakhon Si Thammarat");
 add("TH-81", "クラビ", "Krabi");
 add("TH-82", "パンガー", "Phangnga", "Phang Nga");
 add("TH-83", "プーケット", "Phuket");
