@@ -341,7 +341,6 @@ async function queryNotion(cursor = null) {
 // =============================
 // Main
 // =============================
-
 async function main() {
   let cursor = null;
   const pages = [];
@@ -374,13 +373,14 @@ async function main() {
 
     const props = page.properties || {};
 
-if (title === "バンコク" || title === "チョンブリー" || title === "チェンマイ") {
-  console.log("DEBUG TITLE:", title);
-  console.log("DEBUG PROPERTIES:", JSON.stringify(props, null, 2));
-}
+    if (title === "バンコク" || title === "チョンブリー" || title === "チェンマイ") {
+      console.log("DEBUG TITLE:", title);
+      console.log("DEBUG PROPERTIES:", JSON.stringify(props, null, 2));
+    }
 
-if (isVisited(props)) {
-  visited.push(id);
+    if (isVisited(props)) {
+      visited.push(id);
+    }
   }
 
   const output = {
