@@ -2,7 +2,6 @@ const fs = require("fs");
 
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const PROVINCE_DATA_SOURCE_ID = process.env.NOTION_DATABASE_ID || "";
-const TRIP_DATA_SOURCE_ID = process.env.NOTION_TRIP_DATA_SOURCE_ID || "";
 
 if (!NOTION_TOKEN || !PROVINCE_DATA_SOURCE_ID) {
   throw new Error("NOTION_TOKEN or NOTION_DATABASE_ID is missing.");
@@ -168,16 +167,6 @@ function getPropByNames(props, names) {
   return null;
 }
 
-function getRelationsFromProp(prop) {
-  if (!prop) return [];
-
-  if (prop.type === "relation") {
-    return prop.relation.map(r => r.id);
-  }
-
-  return [];
-}
-
 // =============================
 // 訪問済み判定
 // =============================
@@ -187,9 +176,19 @@ function textIsVisited(text) {
   if (!value) return false;
 
   const positiveWords = [
-    "true", "yes", "done", "visited",
-    "行った", "訪問済み", "訪問済", "済", "完了",
-    "○", "〇", "✓", "✔"
+    "true",
+    "yes",
+    "done",
+    "visited",
+    "行った",
+    "訪問済み",
+    "訪問済",
+    "済",
+    "完了",
+    "○",
+    "〇",
+    "✓",
+    "✔"
   ];
 
   if (positiveWords.some(k => value.includes(k))) return true;
@@ -240,39 +239,52 @@ function isVisited(props) {
 }
 
 // =============================
-// 旅行一覧：計画中 / 予約済み判定
+// 計画中・予約済み判定
 // =============================
 
-function isPlannedTrip(props) {
-  const statusProp = getPropByNames(props, [
-    "ステータス",
-    "Status",
-    "状態"
-  ]);
+function textIsPlanned(text) {
+  const value = String(text || "").trim();
+  if (!value) return false;
 
-  const status = propToText(statusProp);
-
-  return [
+  const plannedWords = [
+    "true",
     "計画中",
     "予約済み",
     "予約済",
+    "予定あり",
     "Planning",
     "Planned",
     "Booked"
-  ].some(k => status.includes(k));
+  ];
+
+  return plannedWords.some(k => value.includes(k));
 }
 
-function getTripDestinationRelationIds(props) {
-  const destinationProp = getPropByNames(props, [
-    "行き先",
-    "目的地",
-    "訪問県",
-    "県",
-    "Destination",
-    "Destinations"
+function propLooksPlanned(prop) {
+  if (!prop) return false;
+
+  if (prop.type === "checkbox") return prop.checkbox === true;
+
+  if (prop.type === "formula") {
+    const f = prop.formula;
+    if (f.type === "boolean") return f.boolean === true;
+    if (f.type === "string") return textIsPlanned(f.string);
+  }
+
+  return textIsPlanned(propToText(prop));
+}
+
+function isPlannedProvince(props) {
+  const plannedProp = getPropByNames(props, [
+    "予定あり",
+    "計画中",
+    "予約済み",
+    "予約済",
+    "Planned",
+    "planned"
   ]);
 
-  return getRelationsFromProp(destinationProp);
+  return propLooksPlanned(plannedProp);
 }
 
 // =============================
@@ -324,7 +336,6 @@ async function main() {
   const visited = [];
   const planned = [];
   const unknown = [];
-  const pageIdToProvinceCode = new Map();
 
   for (const page of provincePages) {
     const title = getTitle(page);
@@ -338,32 +349,12 @@ async function main() {
       continue;
     }
 
-    pageIdToProvinceCode.set(page.id, code);
-
     const props = page.properties || {};
 
     if (isVisited(props)) {
       visited.push(code);
-    }
-  }
-
-  if (TRIP_DATA_SOURCE_ID) {
-    const tripPages = await getAllPages(TRIP_DATA_SOURCE_ID);
-
-    for (const trip of tripPages) {
-      const props = trip.properties || {};
-
-      if (!isPlannedTrip(props)) continue;
-
-      const destinationIds = getTripDestinationRelationIds(props);
-
-      for (const destinationId of destinationIds) {
-        const code = pageIdToProvinceCode.get(destinationId);
-
-        if (code) {
-          planned.push(code);
-        }
-      }
+    } else if (isPlannedProvince(props)) {
+      planned.push(code);
     }
   }
 
