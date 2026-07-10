@@ -136,12 +136,20 @@ function propToText(prop) {
     return prop.select?.name || "";
   }
 
+  if (prop.type === "status") {
+    return prop.status?.name || "";
+  }
+
   if (prop.type === "multi_select") {
     return prop.multi_select.map(s => s.name).join(",");
   }
 
   if (prop.type === "checkbox") {
     return prop.checkbox ? "true" : "false";
+  }
+
+  if (prop.type === "number") {
+    return String(prop.number ?? "");
   }
 
   if (prop.type === "formula") {
