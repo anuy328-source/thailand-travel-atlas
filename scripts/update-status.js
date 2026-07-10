@@ -374,9 +374,13 @@ async function main() {
 
     const props = page.properties || {};
 
-    if (isVisited(props)) {
-      visited.push(id);
-    }
+if (title === "バンコク" || title === "チョンブリー" || title === "チェンマイ") {
+  console.log("DEBUG TITLE:", title);
+  console.log("DEBUG PROPERTIES:", JSON.stringify(props, null, 2));
+}
+
+if (isVisited(props)) {
+  visited.push(id);
   }
 
   const output = {
