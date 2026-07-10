@@ -285,11 +285,9 @@ async function main() {
 
     const props = page.properties || {};
 
-    if (isVisited(props)) {
-      visited.push(id);
-    } else if (isPlanned(props)) {
-      planned.push(id);
-    }
+  if (isVisited(props)) {
+    visited.push(id);
+  }
   }
 
   const output = {
