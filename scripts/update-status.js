@@ -239,7 +239,7 @@ function propLooksVisited(prop) {
       return ["true", "行った", "訪問済み", "訪問済", "済", "完了", "Visited", "Done"]
         .some(k => String(f.string || "").includes(k));
     }
-  }
+  
 
   if (prop.type === "rollup") {
     const text = propToText(prop);
