@@ -41,6 +41,7 @@
     }
 
     .visited { background: #4CAF50; }
+    .planned { background: #F4C542; }
     .unvisited { background: #E8E8E8; border: 1px solid #aaa; }
 
     #chartdiv {
@@ -66,6 +67,7 @@
 
     <div class="legend">
       <span><span class="dot visited"></span>訪問済み</span>
+      <span><span class="dot planned"></span>計画中・予約済み</span>
       <span><span class="dot unvisited"></span>未訪問</span>
     </div>
 
@@ -93,13 +95,15 @@
         const data = await res.json();
 
         return {
-          visited: data.visited || []
+          visited: data.visited || [],
+          planned: data.planned || []
         };
       } catch (err) {
         console.warn("Failed to load status.json:", err);
 
         return {
-          visited: []
+          visited: [],
+          planned: []
         };
       }
     }
@@ -123,6 +127,7 @@
       );
 
       const visited = status.visited;
+      const planned = status.planned;
 
       const polygonSeries = chart.series.push(
         am5map.MapPolygonSeries.new(root, {
@@ -143,6 +148,10 @@
 
         if (visited.includes(id)) {
           return am5.color(0x4CAF50);
+        }
+
+        if (planned.includes(id)) {
+          return am5.color(0xF4C542);
         }
 
         return am5.color(0xE8E8E8);
