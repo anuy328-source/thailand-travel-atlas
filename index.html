@@ -1,85 +1,161 @@
-<script>
-  async function loadStatus() {
-    try {
-      const res = await fetch("./data/status.json?ts=" + Date.now());
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thailand Travel Atlas</title>
 
-      if (!res.ok) {
-        throw new Error("status.json not found");
-      }
-
-      const data = await res.json();
-
-      console.log("Loaded status:", data);
-
-      return {
-        visited: data.visited || [],
-        planned: data.planned || []
-      };
-    } catch (err) {
-      console.warn("Failed to load status.json:", err);
-
-      return {
-        visited: [],
-        planned: []
-      };
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f7f7f3;
+      color: #222;
     }
-  }
 
-  am5.ready(async function() {
-    const status = await loadStatus();
+    .wrap {
+      padding: 14px;
+    }
 
-    const root = am5.Root.new("chartdiv");
+    h1 {
+      font-size: 20px;
+      margin: 0 0 8px;
+    }
 
-    root.setThemes([
-      am5themes_Animated.new(root)
-    ]);
+    .legend {
+      display: flex;
+      gap: 14px;
+      font-size: 13px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
 
-    const chart = root.container.children.push(
-      am5map.MapChart.new(root, {
-        panX: "none",
-        panY: "none",
-        wheelY: "none",
-        projection: am5map.geoMercator()
-      })
-    );
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 5px;
+      vertical-align: -1px;
+    }
 
-    const visited = status.visited;
-    const planned = status.planned;
+    .visited { background: #4CAF50; }
+    .unvisited { background: #E8E8E8; border: 1px solid #aaa; }
 
-    const polygonSeries = chart.series.push(
-      am5map.MapPolygonSeries.new(root, {
-        geoJSON: am5geodata_thailandLow
-      })
-    );
+    #chartdiv {
+      width: 100%;
+      height: 680px;
+      border-radius: 16px;
+      border: 1px solid #ddd;
+      background: #ffffff;
+      overflow: hidden;
+    }
 
-    polygonSeries.mapPolygons.template.setAll({
-      tooltipText: "{name}",
-      interactive: true,
-      stroke: am5.color(0xffffff),
-      strokeWidth: 1,
-      fill: am5.color(0xe8e8e8)
-    });
+    .info {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #555;
+    }
+  </style>
+</head>
 
-    polygonSeries.mapPolygons.template.adapters.add("fill", function(fill, target) {
-      const id = target.dataItem.dataContext.id;
+<body>
+  <div class="wrap">
+    <h1>🇹🇭 Thailand Travel Atlas</h1>
 
-      if (visited.includes(id)) {
-        return am5.color(0x4CAF50);
+    <div class="legend">
+      <span><span class="dot visited"></span>訪問済み</span>
+      <span><span class="dot unvisited"></span>未訪問</span>
+    </div>
+
+    <div id="chartdiv"></div>
+
+    <div class="info">
+      Notionの77県マスターから自動更新
+    </div>
+  </div>
+
+  <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+  <script src="https://cdn.amcharts.com/lib/5/map.js"></script>
+  <script src="https://cdn.amcharts.com/lib/5/geodata/thailandLow.js"></script>
+  <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+  <script>
+    async function loadStatus() {
+      try {
+        const res = await fetch("./data/status.json?ts=" + Date.now());
+
+        if (!res.ok) {
+          throw new Error("status.json not found");
+        }
+
+        const data = await res.json();
+
+        return {
+          visited: data.visited || []
+        };
+      } catch (err) {
+        console.warn("Failed to load status.json:", err);
+
+        return {
+          visited: []
+        };
       }
+    }
 
-      if (planned.includes(id)) {
-        return am5.color(0xF4C542);
-      }
+    am5.ready(async function() {
+      const status = await loadStatus();
 
-      return am5.color(0xE8E8E8);
+      const root = am5.Root.new("chartdiv");
+
+      root.setThemes([
+        am5themes_Animated.new(root)
+      ]);
+
+      const chart = root.container.children.push(
+        am5map.MapChart.new(root, {
+          panX: "none",
+          panY: "none",
+          wheelY: "none",
+          projection: am5map.geoMercator()
+        })
+      );
+
+      const visited = status.visited;
+
+      const polygonSeries = chart.series.push(
+        am5map.MapPolygonSeries.new(root, {
+          geoJSON: am5geodata_thailandLow
+        })
+      );
+
+      polygonSeries.mapPolygons.template.setAll({
+        tooltipText: "{name}",
+        interactive: true,
+        stroke: am5.color(0xffffff),
+        strokeWidth: 1,
+        fill: am5.color(0xe8e8e8)
+      });
+
+      polygonSeries.mapPolygons.template.adapters.add("fill", function(fill, target) {
+        const id = target.dataItem.dataContext.id;
+
+        if (visited.includes(id)) {
+          return am5.color(0x4CAF50);
+        }
+
+        return am5.color(0xE8E8E8);
+      });
+
+      polygonSeries.mapPolygons.template.states.create("hover", {
+        fill: am5.color(0x7BC67E)
+      });
+
+      polygonSeries.events.on("datavalidated", function() {
+        chart.goHome();
+      });
     });
-
-    polygonSeries.mapPolygons.template.states.create("hover", {
-      fill: am5.color(0x7BC67E)
-    });
-
-    polygonSeries.events.on("datavalidated", function() {
-      chart.goHome();
-    });
-  });
-</script>
+  </script>
+</body>
+</html>
