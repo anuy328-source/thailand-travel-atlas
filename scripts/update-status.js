@@ -186,8 +186,37 @@ function textMatches(props, names, keywords) {
   return keywords.some(k => text.includes(k));
 }
 
+function propLooksVisited(prop) {
+  if (!prop) return false;
+
+  if (prop.type === "checkbox") {
+    return prop.checkbox === true;
+  }
+
+  const text = propToText(prop);
+
+  return [
+    "true",
+    "行った",
+    "訪問済み",
+    "訪問済",
+    "済",
+    "完了",
+    "Visited",
+    "Done"
+  ].some(k => text.includes(k));
+}
+
 function isVisited(props) {
-  if (isChecked(props, ["行った", "訪問済み", "訪問済", "Visited", "visited"])) return true;
+  const visitedProp = getPropByNames(props, [
+    "行った",
+    "訪問済み",
+    "訪問済",
+    "Visited",
+    "visited"
+  ]);
+
+  if (propLooksVisited(visitedProp)) return true;
 
   return textMatches(
     props,
