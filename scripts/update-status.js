@@ -177,9 +177,14 @@ function getTitle(page) {
 }
 
 function getPropByNames(props, names) {
-  for (const name of names) {
-    if (props[name]) return props[name];
+  const targets = names.map(name => normalizeKey(name));
+
+  for (const [actualName, prop] of Object.entries(props)) {
+    if (targets.includes(normalizeKey(actualName))) {
+      return prop;
+    }
   }
+
   return null;
 }
 
@@ -215,14 +220,68 @@ function propLooksVisited(prop) {
   ].some(k => text.includes(k));
 }
 
-function isVisited(props) {
-  const visitedProp = getPropByNames(props, [
+function propLooksVisited(prop) {
+  if (!prop) return false;
+
+  if (prop.type === "checkbox") {
+    return prop.checkbox === true;
+  }
+
+  if (prop.type === "number") {
+    return Number(prop.number || 0) > 0;
+  }
+
+  if (prop.type === "formula") {
+    const f = prop.formula;
+    if (f.type === "boolean") return f.boolean === true;
+    if (f.type === "number") return Number(f.number || 0) > 0;
+    if (f.type === "string") {
+      return ["true", "行った", "訪問済み", "訪問済", "済", "完了", "Visited", "Done"]
+        .some(k => String(f.string || "").includes(k));
+    }
+  }
+
+  if (prop.type === "rollup") {
+    const text = propToText(prop);
+    if (text.includes("true")) return true;
+
+    const num = Number(text);
+    if (!Number.isNaN(num) && num > 0) return true;
+  }
+
+  const text = propToText(prop);
+
+  return [
+    "true",
     "行った",
     "訪問済み",
     "訪問済",
+    "済",
+    "完了",
+    "Visited",
+    "Done"
+  ].some(k => text.includes(k));
+}
+
+function isVisited(props) {
+  const visitedProp = getPropByNames(props, [
+    "行った",
+    "行った回数",
+    "訪問済み",
+    "訪問済",
+    "訪問回数",
     "Visited",
     "visited"
   ]);
+
+  if (propLooksVisited(visitedProp)) return true;
+
+  return textMatches(
+    props,
+    ["ステータス", "Status", "状態", "訪問状況"],
+    ["訪問済み", "訪問済", "行った", "完了", "済", "Visited", "Done"]
+  );
+}
 
   if (propLooksVisited(visitedProp)) return true;
 
